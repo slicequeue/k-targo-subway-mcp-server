@@ -2,6 +2,7 @@ import { z } from "zod";
 import { MCPTool } from "./types";
 import { getSubwayList, getStationTimetable, getStationAllArgsTimetable } from "../external/tago-subway/service";
 import { DailyTypeCode, UpDownTypeCode } from "../external/tago-subway/types/codes";
+import { ResponseUtil } from "../utils/ResponseUtil";
 
 /**
  * 지하철역 검색 도구
@@ -19,26 +20,26 @@ export const searchSubwayStationTool: MCPTool = {
     try {
       const result = await getSubwayList(args.stationName, args.pageNo, args.numOfRows);
       
-      return {
-        success: true,
-        data: {
-          stations: result.data.map(station => ({
-            stationId: station.stationId,
-            stationName: station.stationName,
-            routeName: station.routeName
-          })),
-          paging: {
-            totalCount: result.paging.totalCount,
-            pageNo: result.paging.pageNo,
-            numOfRows: result.paging.numOfRows
-          }
-        }
-      };
+      if (result.data.length === 0) {
+        return ResponseUtil.text(`"${args.stationName}" 검색 결과가 없습니다.`);
+      }
+
+      const stationInfo = result.data.map(station => 
+        `- **${station.stationName}** (${station.routeName})\n  - 역 ID: ${station.stationId}`
+      ).join('\n\n');
+
+      const message = `## 지하철역 검색 결과: "${args.stationName}"\n\n${stationInfo}\n\n**총 ${result.paging.totalCount}개 역 발견**`;
+      
+      return ResponseUtil.success(message, {
+        stations: result.data.map(station => ({
+          stationId: station.stationId,
+          stationName: station.stationName,
+          routeName: station.routeName
+        })),
+        paging: result.paging
+      });
     } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다."
-      };
+      return ResponseUtil.error(`지하철역 검색 중 오류가 발생했습니다: ${error instanceof Error ? error.message : "알 수 없는 오류"}`);
     }
   }
 };
@@ -72,31 +73,42 @@ export const getSubwayTimetableTool: MCPTool = {
         args.filterNonArrive
       );
       
-      return {
-        success: true,
-        data: {
-          stationName: result.data[0]?.subwayStationNm || "알 수 없음",
-          dailyType: args.dailyType,
-          upDownType: args.upDownType,
-          timetables: result.data.map(item => ({
-            arrivalTime: item.arrTime,
-            departureTime: item.depTime,
-            endStation: item.endSubwayStationNm,
-            routeId: item.subwayRouteId
-          })),
-          paging: {
-            totalCount: result.paging.totalCount,
-            pageNo: result.paging.pageNo,
-            numOfRows: result.paging.numOfRows,
-            filteredCount: result.paging.filteredNumOfRows
-          }
-        }
+      if (result.data.length === 0) {
+        return ResponseUtil.text(`시간표 정보가 없습니다. (역 ID: ${args.stationId}, 요일: ${args.dailyType}, 방향: ${args.upDownType})`);
+      }
+
+      const stationName = result.data[0]?.subwayStationNm || "알 수 없음";
+      const dailyTypeText: Record<string, string> = {
+        "WEEKDAY": "평일",
+        "SATURDAY": "토요일", 
+        "SUNDAY": "일요일/공휴일"
       };
+      
+      const upDownTypeText: Record<string, string> = {
+        "UP": "상행(서울방향)",
+        "DOWN": "하행(서울반대방향)"
+      };
+
+      const timetableInfo = result.data.map(item => 
+        `- **${item.arrTime}** 도착 → **${item.depTime}** 출발 (종점: ${item.endSubwayStationNm})`
+      ).join('\n');
+
+      const message = `## ${stationName} 지하철 시간표\n\n**${dailyTypeText[args.dailyType]} ${upDownTypeText[args.upDownType]}**\n\n${timetableInfo}\n\n**총 ${result.data.length}개 열차**`;
+      
+      return ResponseUtil.success(message, {
+        stationName,
+        dailyType: args.dailyType,
+        upDownType: args.upDownType,
+        timetables: result.data.map(item => ({
+          arrivalTime: item.arrTime,
+          departureTime: item.depTime,
+          endStation: item.endSubwayStationNm,
+          routeId: item.subwayRouteId
+        })),
+        paging: result.paging
+      });
     } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다."
-      };
+      return ResponseUtil.error(`지하철 시간표 조회 중 오류가 발생했습니다: ${error instanceof Error ? error.message : "알 수 없는 오류"}`);
     }
   }
 };
@@ -125,30 +137,49 @@ export const getAllSubwayTimetablesTool: MCPTool = {
         args.delayMsec
       );
       
-      return {
-        success: true,
-        data: {
-          stationId: args.stationId,
-          totalCombinations: results.length,
-          timetables: results.map(result => ({
-            dailyType: result.dailyTypeCode,
-            upDownType: result.upDownTypeCode,
-            stationName: result.data[0]?.subwayStationNm || "알 수 없음",
-            timetableCount: result.data.length,
-            timetables: result.data.map(item => ({
-              arrivalTime: item.arrTime,
-              departureTime: item.depTime,
-              endStation: item.endSubwayStationNm,
-              routeId: item.subwayRouteId
-            }))
+      if (results.length === 0) {
+        return ResponseUtil.text(`전체 시간표 정보가 없습니다. (역 ID: ${args.stationId})`);
+      }
+
+      const stationName = results[0]?.data[0]?.subwayStationNm || "알 수 없음";
+      const dailyTypeText: Record<string, string> = {
+        "WEEKDAY": "평일",
+        "SATURDAY": "토요일", 
+        "SUNDAY": "일요일/공휴일"
+      };
+      
+      const upDownTypeText: Record<string, string> = {
+        "UP": "상행(서울방향)",
+        "DOWN": "하행(서울반대방향)"
+      };
+
+      const summary = results.map(result => {
+        const dailyText = dailyTypeText[result.dailyTypeCode] || result.dailyTypeCode;
+        const upDownText = upDownTypeText[result.upDownTypeCode] || result.upDownTypeCode;
+        return `- **${dailyText} ${upDownText}**: ${result.data.length}개 열차`;
+      }).join('\n');
+
+      const message = `## ${stationName} 전체 지하철 시간표\n\n**총 ${results.length}개 조합**\n\n${summary}`;
+      
+      return ResponseUtil.success(message, {
+        stationId: args.stationId,
+        stationName,
+        totalCombinations: results.length,
+        timetables: results.map(result => ({
+          dailyType: result.dailyTypeCode,
+          upDownType: result.upDownTypeCode,
+          stationName: result.data[0]?.subwayStationNm || "알 수 없음",
+          timetableCount: result.data.length,
+          timetables: result.data.map(item => ({
+            arrivalTime: item.arrTime,
+            departureTime: item.depTime,
+            endStation: item.endSubwayStationNm,
+            routeId: item.subwayRouteId
           }))
-        }
-      };
+        }))
+      });
     } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다."
-      };
+      return ResponseUtil.error(`전체 지하철 시간표 조회 중 오류가 발생했습니다: ${error instanceof Error ? error.message : "알 수 없는 오류"}`);
     }
   }
 }; 
