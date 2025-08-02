@@ -1,4 +1,5 @@
 # 🇰🇷 K-Targo Subway MCP Server
+[![smithery badge](https://smithery.ai/badge/@slicequeue/k-targo-subway-mcp-server)](https://smithery.ai/server/@slicequeue/k-targo-subway-mcp-server)
 
 한국 지하철 정보를 제공하는 MCP (Model Context Protocol) 서버입니다.
 
@@ -10,6 +11,14 @@
 - **MCP 표준 준수**: Model Context Protocol 표준을 따르는 도구 제공
 
 ## 🛠️ 설치 및 사용
+
+### Installing via Smithery
+
+To install k-targo-subway-mcp-server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@slicequeue/k-targo-subway-mcp-server):
+
+```bash
+npx -y @smithery/cli install @slicequeue/k-targo-subway-mcp-server --client claude
+```
 
 ### 1. 공공데이터 API 키 설정
 이 서버는 **국토교통부_(TAGO)_지하철정보** API를 사용합니다. 사용하기 전에 API 키를 설정해야 합니다.
