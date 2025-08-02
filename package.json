@@ -1,0 +1,37 @@
+{
+  "name": "mcp-using-sdk-boilerplate",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "k-mfds-fooddb-mcp-server": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "start": "node dist/index.js",
+    "dev": "npm run build && npm run start",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "prepublishOnly": "npm run build"
+  },
+  "author": "slicequeue",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.1",
+    "axios": "^1.10.0",
+    "dotenv": "^16.4.5",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/dotenv": "^8.2.0",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^24.0.15",
+    "esbuild": "^0.20.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.2",
+    "tsup": "^8.0.0",
+    "typescript": "^5.8.3"
+  }
+}
