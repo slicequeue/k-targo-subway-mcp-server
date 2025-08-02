@@ -1,5 +1,6 @@
 import { getSubwayList, getStationTimetable, getStationAllArgsTimetable } from '../src/external/tago-subway/service';
 import { DailyTypeCode, UpDownTypeCode } from '../src/external/tago-subway/types/codes';
+import { normalizeStationName } from '../src/external/tago-subway/types/utils';
 
 /**
  * 지하철 API 테스트 함수들
@@ -154,5 +155,55 @@ export async function testSpecificStation(stationName: string) {
   } catch (error) {
     console.error('❌ 테스트 실패:', error);
     throw error;
+  }
+} 
+
+/**
+ * 역 이름 정규화 테스트
+ */
+export async function testStationNameNormalization() {
+  console.log('🔍 역 이름 정규화 테스트 시작...\n');
+  
+  const testCases = [
+    '강남역',
+    '홍대입구역', 
+    '신촌',
+    '강남',
+    '홍대입구',
+    '강남역역', // 중복된 '역' 접미사
+    '역', // '역'만 있는 경우
+    '  강남역  ', // 공백 포함
+    ''
+  ];
+  
+  console.log('📋 정규화 테스트 결과:');
+  testCases.forEach(testCase => {
+    const normalized = normalizeStationName(testCase);
+    const changed = testCase !== normalized;
+    const status = changed ? '✅ 변환됨' : '➡️ 동일';
+    console.log(`${status} "${testCase}" → "${normalized}"`);
+  });
+  
+  console.log('\n🧪 실제 검색 테스트:');
+  
+  // 실제 검색 테스트
+  const searchTests = ['강남역', '홍대입구역', '신촌'];
+  
+  for (const testCase of searchTests) {
+    try {
+      const normalized = normalizeStationName(testCase);
+      const result = await getSubwayList(normalized, 1, 3);
+      
+      console.log(`\n🔍 "${testCase}" → "${normalized}" 검색 결과:`);
+      if (result.data.length > 0) {
+        result.data.forEach((station, index) => {
+          console.log(`  ${index + 1}. ${station.stationName} (${station.routeName})`);
+        });
+      } else {
+        console.log(`  ❌ 검색 결과 없음`);
+      }
+    } catch (error) {
+      console.error(`  ❌ "${testCase}" 검색 실패:`, error);
+    }
   }
 } 

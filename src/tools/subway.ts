@@ -3,6 +3,7 @@ import { MCPTool } from "./types";
 import { getSubwayList, getStationTimetable, getStationAllArgsTimetable } from "../external/tago-subway/service";
 import { DailyTypeCode, UpDownTypeCode } from "../external/tago-subway/types/codes";
 import { ResponseUtil } from "../utils/ResponseUtil";
+import { normalizeStationName } from "../external/tago-subway/types/utils";
 
 /**
  * 지하철역 검색 도구
@@ -10,27 +11,34 @@ import { ResponseUtil } from "../utils/ResponseUtil";
  */
 export const searchSubwayStationTool: MCPTool = {
   name: "search_subway_station",
-  description: "지하철역 이름으로 역 정보를 검색합니다. 역 ID, 역 이름, 노선 정보를 반환합니다.",
+  description: "지하철역 이름으로 역 정보를 검색합니다. 역 ID, 역 이름, 노선 정보를 반환합니다. '역' 접미사는 자동으로 제거됩니다 (예: '강남역' → '강남').",
   inputSchema: {
-    stationName: z.string().describe("검색할 지하철역 이름 (예: 강남, 홍대입구)"),
+    stationName: z.string().describe("검색할 지하철역 이름 (예: 강남, 강남역, 홍대입구, 홍대입구역)"),
     pageNo: z.number().optional().default(1).describe("페이지 번호 (기본값: 1)"),
     numOfRows: z.number().optional().default(10).describe("한 페이지당 결과 수 (기본값: 10)")
   },
   handler: async (args) => {
     try {
-      const result = await getSubwayList(args.stationName, args.pageNo, args.numOfRows);
+      const normalizedStationName = normalizeStationName(args.stationName);
+      const result = await getSubwayList(normalizedStationName, args.pageNo, args.numOfRows);
       
       if (result.data.length === 0) {
-        return ResponseUtil.text(`"${args.stationName}" 검색 결과가 없습니다.`);
+        return ResponseUtil.text(`"${args.stationName}" (검색어: "${normalizedStationName}") 검색 결과가 없습니다.`);
       }
 
       const stationInfo = result.data.map(station => 
         `- **${station.stationName}** (${station.routeName})\n  - 역 ID: ${station.stationId}`
       ).join('\n\n');
 
-      const message = `## 지하철역 검색 결과: "${args.stationName}"\n\n${stationInfo}\n\n**총 ${result.paging.totalCount}개 역 발견**`;
+      const searchInfo = args.stationName !== normalizedStationName 
+        ? ` (검색어: "${normalizedStationName}")`
+        : '';
+
+      const message = `## 지하철역 검색 결과: "${args.stationName}"${searchInfo}\n\n${stationInfo}\n\n**총 ${result.paging.totalCount}개 역 발견**`;
       
       return ResponseUtil.success(message, {
+        originalQuery: args.stationName,
+        normalizedQuery: normalizedStationName,
         stations: result.data.map(station => ({
           stationId: station.stationId,
           stationName: station.stationName,

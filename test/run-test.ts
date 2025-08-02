@@ -1,4 +1,4 @@
-import { runAllTests, testSpecificStation } from './external-test';
+import { runAllTests, testSpecificStation, testStationNameNormalization } from './external-test';
 
 /**
  * 테스트 실행 메인 함수
@@ -17,14 +17,20 @@ async function main() {
     const stationName = args[1];
     console.log(`"${stationName}" 역 테스트를 실행합니다...\n`);
     await testSpecificStation(stationName);
+  } else if (args[0] === 'normalize') {
+    // 역 이름 정규화 테스트
+    console.log('역 이름 정규화 테스트를 실행합니다...\n');
+    await testStationNameNormalization();
   } else {
     console.log('사용법:');
     console.log('  npm run test                    # 기본 통합 테스트');
     console.log('  npm run test station "강남"     # 특정 역 테스트');
+    console.log('  npm run test normalize          # 역 이름 정규화 테스트');
     console.log('');
     console.log('예시:');
     console.log('  npm run test station "홍대입구"');
     console.log('  npm run test station "신촌"');
+    console.log('  npm run test normalize');
   }
 }
 
