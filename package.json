@@ -1,10 +1,10 @@
 {
-  "name": "mcp-using-sdk-boilerplate",
+  "name": "k-targo-subway-mcp-server",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "k-mfds-fooddb-mcp-server": "./dist/index.js"
+    "k-targo-subway-mcp-server": "./dist/index.js"
   },
   "scripts": {
     "build": "tsup",
@@ -18,8 +18,24 @@
     "prepublishOnly": "npm run build"
   },
   "author": "slicequeue",
-  "license": "ISC",
-  "description": "",
+  "license": "MIT",
+  "description": "한국 지하철 정보를 제공하는 MCP (Model Context Protocol) 서버",
+  "keywords": [
+    "mcp",
+    "subway",
+    "korea",
+    "tago",
+    "transportation",
+    "api"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/slicequeue/k-targo-subway-mcp-server"
+  },
+  "homepage": "https://github.com/slicequeue/k-targo-subway-mcp-server",
+  "bugs": {
+    "url": "https://github.com/slicequeue/k-targo-subway-mcp-server/issues"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.1",
     "axios": "^1.10.0",
