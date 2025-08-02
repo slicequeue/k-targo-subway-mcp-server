@@ -30,17 +30,19 @@ Object.values(tools).forEach(tool => {
 });
 
 // 리소스 등록
-Object.values(resources).forEach(resource => {
-  return server.registerResource(
-    resource.name,
-    resource.template,
-    {
-      title: resource.name,
-      description: resource.description
-    },
-    resource.handler
-  );
-});
+if (Object.keys(resources).length > 0) {
+  Object.values(resources).forEach(resource => {
+    return server.registerResource(
+      resource.name,
+      resource.template,
+      {
+        title: resource.name,
+        description: resource.description
+      },
+      resource.handler
+    );
+  });
+}
 
 // 서버 시작
 const transport = new StdioServerTransport();
